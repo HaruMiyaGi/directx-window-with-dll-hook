@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <optional>
+#include "Graphics.h"
 
 class Window
 {
@@ -53,6 +54,12 @@ public:
 			NULL, NULL, WindowClass::GetInstance(), this);
 
 		ShowWindow(hWnd, SW_SHOWDEFAULT);
+
+		pGfx = std::make_unique<Graphics>(hWnd, width, height);
+	}
+	Graphics& gfx()
+	{
+		return *pGfx;
 	}
 	~Window()
 	{
@@ -107,4 +114,6 @@ private:
 	int width;
 	int height;
 	HWND hWnd;
+public:
+	std::unique_ptr<Graphics> pGfx;
 };

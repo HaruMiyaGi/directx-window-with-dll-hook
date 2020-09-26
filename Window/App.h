@@ -19,7 +19,9 @@ public:
 private:
 	void Frame()
 	{
+		wnd.gfx().StartFrame(1.0f, 0.0f, 0.0f);
 		int i = 0;
+		wnd.gfx().EndFrame();
 	}
 private:
 	Window wnd;
