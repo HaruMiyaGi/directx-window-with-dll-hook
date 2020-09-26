@@ -12,20 +12,21 @@ public:
 	{
 		while (true)
 		{
+			if (toggle && GetKeyState(VK_F1) & 1)
+			{
+				LoadLibrary("Hook.dll");
+				toggle = false;
+			}
+
 			if (const auto ecode = Window::ProcessMessages())
 				return *ecode;
 			Frame();
 		}
 	}
 private:
-	void Frame()
-	{
-		auto dt = sin(timer.Peek()) / 2.0f + 0.5f;
-
-		wnd.gfx().StartFrame(dt, 0.0f, 0.0f);
-		wnd.gfx().EndFrame();
-	}
+	void Frame();
 private:
 	Timer timer;
 	Window wnd;
+	bool toggle = true;
 };
