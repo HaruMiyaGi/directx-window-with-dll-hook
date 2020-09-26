@@ -1,5 +1,6 @@
 #pragma once
 #include "Window.h"
+#include "Timer.h"
 
 class App
 {
@@ -19,10 +20,12 @@ public:
 private:
 	void Frame()
 	{
-		wnd.gfx().StartFrame(1.0f, 0.0f, 0.0f);
-		int i = 0;
+		auto dt = sin(timer.Peek()) / 2.0f + 0.5f;
+
+		wnd.gfx().StartFrame(dt, 0.0f, 0.0f);
 		wnd.gfx().EndFrame();
 	}
 private:
+	Timer timer;
 	Window wnd;
 };

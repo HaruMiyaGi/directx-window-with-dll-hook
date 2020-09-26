@@ -156,6 +156,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="Timer.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
