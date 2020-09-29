@@ -1,6 +1,7 @@
 #pragma once
 #include "Window.h"
 #include "Timer.h"
+#include "ImGuiManager.h"
 
 class App
 {
@@ -10,23 +11,38 @@ public:
 	{}
 	int Go()
 	{
+
 		while (true)
 		{
-			if (toggle && GetKeyState(VK_F1) & 1)
+			if (GetKeyState(VK_F1) && toggle)
 			{
-				LoadLibrary("Hook.dll");
+				lib = LoadLibrary("Hook.dll");
 				toggle = false;
 			}
 
+			POINT p;
+			GetCursorPos(&p);
+			ScreenToClient(wnd.GetHWND(), &p);
+
+			//if (GetKeyState(VK_F3) && !toggle)
+			//{
+			//	FreeLibrary(lib);
+			//	toggle = true;
+			//}
+
 			if (const auto ecode = Window::ProcessMessages())
 				return *ecode;
-			Frame();
+			Frame(p);
 		}
 	}
 private:
-	void Frame();
+	void Frame(POINT p);
 private:
 	Timer timer;
+	ImguiManager imgui;
 	Window wnd;
+	HMODULE lib = 0;
 	bool toggle = true;
+	float uwu = 1.0f;
+	float owo = 0.0f;
 };

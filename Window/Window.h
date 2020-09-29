@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <optional>
 #include "Graphics.h"
+#include "imgui\imgui_impl_win32.h"
 
 class Window
 {
@@ -55,6 +56,8 @@ public:
 
 		ShowWindow(hWnd, SW_SHOWDEFAULT);
 
+		ImGui_ImplWin32_Init(hWnd);
+
 		pGfx = std::make_unique<Graphics>(hWnd, width, height);
 	}
 	Graphics& gfx()
@@ -79,6 +82,10 @@ public:
 		}
 		return {};
 	}
+	HWND GetHWND()
+	{
+		return hWnd;
+	}
 private:
 	static LRESULT CALLBACK HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
@@ -99,6 +106,9 @@ private:
 	}
 	LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
+		if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+			return true;
+
 		switch (msg)
 		{
 		case WM_CLOSE:

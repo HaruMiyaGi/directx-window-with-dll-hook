@@ -4,11 +4,15 @@
 #include <DirectXMath.h>
 #include <wrl.h>
 #include <memory>
+#include "imgui/imgui_impl_dx11.h"
+#include "imgui/imgui_impl_win32.h"
+#include "Math.h"
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
 
 using namespace Microsoft::WRL;
+
 
 class Graphics
 {
@@ -48,6 +52,9 @@ public:
 		vp.Width = (FLOAT)width;
 		vp.Height = (FLOAT)height;
 		pContex->RSSetViewports(1, &vp);
+
+
+		ImGui_ImplDX11_Init(pDevice.Get(), pContex.Get());
 	}
 	~Graphics() = default;
 	void StartFrame(float r, float g, float b)
@@ -59,8 +66,7 @@ public:
 	{
 		pSwapChain->Present(1, 0);
 	}
-
-	void Cube(float angle)
+	void Cube(float angle, float owo)
 	{
 		// Data for Vertex Buffer
 		struct Vertex {
@@ -151,7 +157,7 @@ public:
 				DirectX::XMMatrixTranspose(
 					DirectX::XMMatrixRotationY(angle) *
 					DirectX::XMMatrixRotationX(-0.5f) *
-					DirectX::XMMatrixTranslation(0.0f, 0.0f, 4.0f) *
+					DirectX::XMMatrixTranslation(0.0f, owo, 4.0f) *
 					DirectX::XMMatrixPerspectiveLH(1.0f, 1.0f, 0.5f, 10.0f)
 				)
 				//DirectX::XMMatrixScaling((3.0f/4.0f), 1.0f, 1.0f)
@@ -244,6 +250,97 @@ public:
 
 		// Draw Call
 		pContex->DrawIndexed((UINT)std::size(indicies), 0, 0);
+	}
+
+	void Line(Vec2 start, Vec2 end)
+	{
+		// Data for Vertex Buffer
+		struct Vertex {
+			float x;
+			float y;
+			float z;
+		};
+		const Vertex vertices[] = {
+			{ view_x(start.x), view_y(start.y), 1.0f },
+			{ view_x(end.x), view_y(end.y), 1.0f }
+		};
+		// Vertex Buffer
+		ComPtr<ID3D11Buffer> pVertexBuffer = nullptr;
+		D3D11_BUFFER_DESC vbd = { 0 };
+		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		vbd.Usage = D3D11_USAGE_DEFAULT;
+		vbd.CPUAccessFlags = 0;
+		vbd.ByteWidth = sizeof(vertices);
+		vbd.StructureByteStride = sizeof(Vertex);
+		D3D11_SUBRESOURCE_DATA vsd = { 0 };
+		vsd.pSysMem = vertices;
+		pDevice->CreateBuffer(&vbd, &vsd, pVertexBuffer.GetAddressOf());
+		const UINT stride = sizeof(Vertex);
+		const UINT offset = 0;
+		pContex->IASetVertexBuffers(0, 1, pVertexBuffer.GetAddressOf(), &stride, &offset);
+
+
+		// Constant Buffer - vertex
+		struct ConstantBuffer
+		{
+			DirectX::XMMATRIX matrix;
+		};
+		const ConstantBuffer cb = {
+			{
+				DirectX::XMMatrixTranspose(
+					DirectX::XMMatrixRotationX(0.0f)
+					//DirectX::XMMatrixTranslation(.1f, .1f, .1f)
+					//DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.0f) *
+					//DirectX::XMMatrixPerspectiveLH(1.0f, 1.0f, 1.0f, 10.0f)
+				)
+			}
+		};
+		ComPtr<ID3D11Buffer> pConstantBuffer = nullptr;
+		D3D11_BUFFER_DESC cbd = { 0 };
+		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		cbd.Usage = D3D11_USAGE_DYNAMIC;
+		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		cbd.MiscFlags = 0;
+		cbd.ByteWidth = sizeof(cb);
+		cbd.StructureByteStride = 0;
+		D3D11_SUBRESOURCE_DATA csd = { 0 };
+		csd.pSysMem = &cb;
+		pDevice->CreateBuffer(&cbd, &csd, &pConstantBuffer);
+		pContex->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+
+
+		// Pixel Shader
+		ComPtr<ID3D11PixelShader> pPixelShader = nullptr;
+		ComPtr<ID3DBlob> pBlob = nullptr;
+		D3DReadFileToBlob(L"PS.cso", &pBlob);
+		pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pPixelShader);
+		pContex->PSSetShader(pPixelShader.Get(), nullptr, 0);
+
+
+		// Vertex Shader
+		ComPtr<ID3D11VertexShader> pVertexShader = nullptr;
+		//ComPtr<ID3DBlob> pBlob = nullptr;
+		D3DReadFileToBlob(L"VS.cso", &pBlob);
+		pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pVertexShader);
+		pContex->VSSetShader(pVertexShader.Get(), nullptr, 0);
+
+
+		// Topology
+		pContex->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+
+		// Input Layout
+		ComPtr<ID3D11InputLayout> pInputLayout = nullptr;
+		const D3D11_INPUT_ELEMENT_DESC ied[]{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			//{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		};
+		pDevice->CreateInputLayout(ied, (UINT)std::size(ied), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &pInputLayout);
+		pContex->IASetInputLayout(pInputLayout.Get());
+
+
+		// Draw Call
+		pContex->Draw(2, 0);
 	}
 
 private:
